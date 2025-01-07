@@ -24,7 +24,7 @@ if (!$dateFrom || !$dateTo) {
 }
 
 try {
-    $data = $db->getPieData($dateFrom, $dateTo);
+    $data = $db->getStockLineChartData($dateFrom, $dateTo);
     echo json_encode($data);
 } catch (Exception $e) {
     http_response_code(500);

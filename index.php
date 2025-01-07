@@ -54,15 +54,29 @@ $db = new Database($pdo);
 </div>
 
 
-<!--wykres słupkowy-->
+<!--wykres liniowy-->
 <div class="container mt-3">
     <div class="card">
-        <div class="card-header">Header</div>
-        <div class="card-body">Content</div>
+        <div class="card-header">
+            Wykres Liniowy
+            <div class="row">
+                <div class="col-3">
+                    <label for="stock-date-from">Data od</label>
+                    <input id="stock-date-from" type="text" onchange="createStockLineChart()" class="form-control datepicker-class-control" placeholder="Wybierz...">
+                </div>
+                <div class="col-3">
+                    <label for="stock-date-to">Data do</label>
+                    <input id="stock-date-to" type="text" onchange="createStockLineChart()" class="form-control datepicker-class-control" placeholder="Wybierz...">
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="stock-line-chart" class="chart-container"></div>
+        </div>
     </div>
 </div>
 
-<!--wykres liniowy-->
+<!--wykres słupkowy-->
 <div class="container mt-3">
     <div class="card">
         <div class="card-header">Header</div>
@@ -83,11 +97,17 @@ $db = new Database($pdo);
             .then(data => {
                 if (data.minDate && data.maxDate) {
                     const dateFromInput = document.getElementById("pie-date-from");
+                    const dateFromInputStock = document.getElementById("stock-date-from");
+
                     const dateToInput = document.getElementById("pie-date-to");
+                    const dateToInputStock = document.getElementById("stock-date-to");
 
                     dateFromInput.value = new Date(data.minDate).toISOString().split("T")[0];
+                    dateFromInputStock.value = new Date(data.minDate).toISOString().split("T")[0];
                     dateToInput.value = new Date(data.maxDate).toISOString().split("T")[0];
+                    dateToInputStock.value = new Date(data.maxDate).toISOString().split("T")[0];
                     createPieChart();
+                    createStockLineChart();
                 } else {
                     console.error("Invalid date range received:", data);
                 }

@@ -17,6 +17,56 @@ function createPieChart() {
     if (!dateFrom || !dateTo) return;
 
     const url = `/api/currency/pie.php?dateFrom=${encodeURIComponent(dateFrom)}&dateTo=${encodeURIComponent(dateTo)}`;
-    chart.dataSource.url = url;
-    chart.dataSource.load();
+
+    fetch("/api/currency/pie.php", {
+        method: "POST",
+        body: JSON.stringify({
+            dateFrom: dateFrom,
+            dateTo: dateTo,
+        })
+    })
+        .then(response => response.json())
+        .then(data => {
+            chart.data = data;
+        })
+        .catch(error => {
+            console.error("Error fetching data:", error);
+        });
+}
+
+function createStockLineChart() {
+    am4core.useTheme(am4themes_animated);
+    am4core.options.autoDispose = true;
+
+    const chart = am4core.create("stock-line-chart", am4charts.XYChart);
+    chart.padding(0, 15, 0, 15);
+    chart.colors.step = 3;
+
+
+    const dateFrom = document.getElementById("stock-date-from").value;
+    const dateTo = document.getElementById("stock-date-to").value;
+
+    if (!dateFrom || !dateTo) return;
+
+    fetch("/api/currency/stock-line.php", {
+        method: "POST",
+        body: JSON.stringify({
+            dateFrom: dateFrom,
+            dateTo: dateTo,
+        })
+    })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data)
+            chart.data = data;
+        })
+        .catch(error => {
+            console.error("Error fetching data:", error);
+        });
+
+
+
+
+
+
 }
