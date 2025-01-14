@@ -53,34 +53,17 @@ class Database
     {
         $query = "
         SELECT 
-            DATE_TIME AS date, 
-            'EUR Buy' AS category, EUR_BUY AS value
+            DATE(DATE_TIME) AS date,
+            AVG(EUR_BUY) AS EUR_BUY,
+            AVG(EUR_SELL) AS EUR_SELL,
+            AVG(USD_BUY) AS USD_BUY,
+            AVG(USD_SELL) AS USD_SELL
         FROM currency_exchange
         WHERE DATE_TIME BETWEEN :dateFrom AND :dateTo
-
-        UNION ALL
-
-        SELECT 
-            DATE_TIME AS date, 
-            'EUR Sell' AS category, EUR_SELL AS value
-        FROM currency_exchange
-        WHERE DATE_TIME BETWEEN :dateFrom AND :dateTo
-
-        UNION ALL
-
-        SELECT 
-            DATE_TIME AS date, 
-            'USD Buy' AS category, USD_BUY AS value
-        FROM currency_exchange
-        WHERE DATE_TIME BETWEEN :dateFrom AND :dateTo
-
-        UNION ALL
-
-        SELECT 
-            DATE_TIME AS date, 
-            'USD Sell' AS category, USD_SELL AS value
-        FROM currency_exchange
-        WHERE DATE_TIME BETWEEN :dateFrom AND :dateTo
+        GROUP BY 
+            DATE(DATE_TIME)
+        ORDER BY 
+            DATE(DATE_TIME)
     ";
 
         $stmt = $this->pdo->prepare($query);
@@ -92,15 +75,55 @@ class Database
         // Fetch the data as associative array
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Initialize an array to store formatted data
         $formattedData = [];
 
-        // Process the data into the desired format
         foreach ($data as $row) {
             $formattedData[] = [
-                'category' => $row['category'],
-                'value' => (float) $row['value'],  // Ensure value is a float
-                'date' => $row['date'],  // Include the date
+                'date' => $row['date'],
+                'EUR_BUY' => (float) $row['EUR_BUY'],
+                'EUR_SELL' => (float) $row['EUR_SELL'],
+                'USD_BUY' => (float) $row['USD_BUY'],
+                'USD_SELL' => (float) $row['USD_SELL'],
+            ];
+        }
+
+        // Return the data as a JSON object
+        return json_encode($formattedData);
+    }
+
+    public function getStepChartData($dateFrom, $dateTo, $category)
+    {
+        $query = "
+        SELECT 
+            DATE(c1.DATE_TIME) AS date,
+            MAX(CASE WHEN c1.DATE_TIME = (SELECT MIN(DATE_TIME) 
+                                          FROM currency_exchange 
+                                          WHERE DATE(DATE_TIME) = DATE(c1.DATE_TIME)) 
+                     THEN $category END) AS open_price,
+            MAX(CASE WHEN c1.DATE_TIME = (SELECT MAX(DATE_TIME) 
+                                          FROM currency_exchange 
+                                          WHERE DATE(DATE_TIME) = DATE(c1.DATE_TIME)) 
+                     THEN $category END) AS close_price
+        FROM currency_exchange c1
+        WHERE DATE_TIME BETWEEN :dateFrom AND :dateTo
+        GROUP BY DATE(c1.DATE_TIME)
+        ORDER BY DATE(c1.DATE_TIME)
+    ";
+
+        $stmt = $this->pdo->prepare($query);
+        $stmt->execute([
+            ':dateFrom' => $dateFrom,
+            ':dateTo' => $dateTo,
+        ]);
+
+        // Fetch the data as associative array
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $formattedData = [];
+        foreach ($data as $row) {
+            $formattedData[] = [
+                'date' => $row['date'],
+                'value' => (float) $row['close_price'] - (float) $row['open_price'],
             ];
         }
 
